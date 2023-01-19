@@ -43,7 +43,8 @@ impl Card {
         }
     }
 
-    pub fn get_next_review_date(&self) -> String {
+    // not get see (https://rust-lang.github.io/api-guidelines/naming.html#c-getter)
+    pub fn next_review_date(&self) -> String {
         self.next_review_day.clone()
     }
 

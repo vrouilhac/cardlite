@@ -51,7 +51,7 @@ fn filter_cards_by_date(cards: &Vec<Card>, date: DateTime<Utc>) -> Vec<Card> {
     let filtered_cards: Vec<Card> = vec![];
 
     for card in cards {
-        // let card_date = Utc::from(card.get_next_review_date());
+        // let card_date = Utc::from(card.next_review_date());
         // get card date
         // compare dates and append to filtered_cards accordingly
         // filtered_cards.append(card);
