@@ -1,10 +1,7 @@
 use crate::constants::{DEFAULT_EF, DEFAULT_I, DEFAULT_N};
-use crate::enums::ReviewScore;
+use crate::date_manager::DateManager;
 
 use serde::{Deserialize, Serialize};
-
-use chrono::prelude::*;
-use chrono::Days;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Card {
@@ -48,56 +45,37 @@ impl Card {
         self.next_review_day.clone()
     }
 
-    pub fn compute_review_score(&mut self, score: &ReviewScore) {
-        let answer = score.get_value();
-        let mut days_to_add: i32 = 0;
+    pub fn interval(&self) -> u32 {
+        self.interval
+    }
 
-        if answer >= 3 {
-            days_to_add = match self.success_recall_time {
-                0 => 1,
-                1 => 6,
-                _ => (self.interval as f32 * self.easiness_factor).round() as i32,
-            };
-            self.interval = days_to_add as u32;
-            self.success_recall_time = self.success_recall_time + 1;
-        } else {
-            self.success_recall_time = 0;
-            self.interval = 1;
-        }
+    pub fn success_recall_time(&self) -> u32 {
+        self.success_recall_time
+    }
 
-        self.easiness_factor = self.easiness_factor
-            + (0.1 - (5 - answer) as f32 * (0.08 + (5 - answer) as f32 * 0.02));
-        self.next_review_day = compute_next_review_day(&self.next_review_day, days_to_add);
+    pub fn question(&self) -> String {
+        self.question.clone()
+    }
 
-        if self.easiness_factor < 1.3 {
-            self.easiness_factor = 1.3;
-        }
+    pub fn easiness_factor(&self) -> f32 {
+        self.easiness_factor
+    }
+
+    pub fn update_score(&mut self, next_ef: f32, next_n: u32, next_i: u32) {
+        self.interval = next_i;
+        self.easiness_factor = next_ef;
+        self.success_recall_time = next_n;
+        let next_review_date = update_next_review_date(next_i);
+        self.next_review_day = next_review_date;
+    }
+
+    pub fn answer(&self) -> String {
+        self.answer.clone()
     }
 }
 
-// Optimize this
-fn compute_next_review_day(review_day: &String, days_to_add: i32) -> String {
-    let re = review_day.split("-").collect::<Vec<&str>>();
-    let year = match re[0].parse::<i32>() {
-        Ok(r) => r,
-        Err(_) => panic!("Failed to parse number"),
-    };
-    let month = match re[1].parse::<u32>() {
-        Ok(r) => r,
-        Err(_) => panic!("Failed to parse number"),
-    };
-    let day = match re[2].parse::<u32>() {
-        Ok(r) => r,
-        Err(_) => panic!("Failed to parse number"),
-    };
-    let date = match NaiveDate::from_ymd_opt(year, month, day) {
-        Some(x) => x,
-        None => panic!("Problem formatting date"),
-    };
-    let new_date = match date.checked_add_days(Days::new(days_to_add as u64)) {
-        Some(r) => r,
-        None => panic!("Failed to add date"),
-    };
-
-    new_date.to_string()
+fn update_next_review_date(interval: u32) -> String {
+    let mut today = DateManager::new();
+    today.add(interval.into());
+    today.date()
 }
